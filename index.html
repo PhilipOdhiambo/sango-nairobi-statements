@@ -1,0 +1,128 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.7.8/handlebars.min.js"
+        integrity="sha512-E1dSFxg+wsfJ4HKjutk/WaCzK7S2wv1POn1RRPGh8ZK+ag9l244Vqxji3r6wgz9YBf6+vhQEYJZpSjqWFPg9gg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <title>Statement:Sango NRB S.H.G</title>
+
+</head>
+
+<body style="padding: 3%;">
+  
+    <button id="sign-in-btn" type="button" class="login-with-google-btn" >
+        Sign in with Google to View Statement (Click here..)
+      </button>
+
+    <p id="user-info"></p>
+
+    <script type="text/x-handlebars-template" id="content">
+        <h3>{{title}}</h3>
+        <table>
+            <tbody>
+                {{#each list}}
+                <tr>
+                    <td>{{formatDate this.Date}}</td>
+                    <td>{{this.Description}}</td>
+                    <td>{{formatNumber this.MemberAmount}}</td>
+                </tr>
+                {{/each}}
+                <tr>
+                    <td></td>
+                    <td><h4>Grand Total:</h4></td>
+                    
+                    <td><h4>{{formatNumber total}}</h4></td>
+                </tr>
+            </tbody>
+        </table>
+        
+    </script>
+    <div id="output"></div>
+
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC9OBpfUWFLaE7cb-lWwDsm_wqWBPv4FMI",
+            authDomain: "sign-in-with-c12d7.firebaseapp.com",
+            projectId: "sign-in-with-c12d7",
+            storageBucket: "sign-in-with-c12d7.firebasestorage.app",
+            messagingSenderId: "1059687372628",
+            appId: "1:1059687372628:web:8b26447ea64a8e28db9ac1",
+            measurementId: "G-VLHZDK22QL"
+        };
+        const url = "https://script.google.com/macros/s/AKfycbx3XQ3hlHQyxqLiqf3my6rGJ6q5aejGAuLdjDeLGozW6sOSVzXN288yaB4ON1sTMlCRVQ/exec"
+
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider()
+
+        async function signInWithGoogle() {
+            try {
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+                let res = await fetch(`${url}?route=emails`)
+                let allowedEmails = await res.json()
+                console.log(allowedEmails)
+
+                if (!allowedEmails.includes(user.email)) {
+                    alert("Access denied: You are not authorized to sign in.");
+                    await auth.signOut(); // Sign out unauthorized user
+                    return;
+                }
+                fetch(`${url}?email=${user.email}`)
+                    .then(res => res.json())
+                    .then(res => {
+                        var data = {
+                            title: `Statement for ${user.displayName}`,
+                            list: res,
+                            total: res.reduce((acc,obj)=> {return acc + obj.MemberAmount},0)
+                        }
+
+                        var template = Handlebars.compile(document.querySelector("#content").innerHTML)
+                        var target = document.querySelector("#output")
+                        target.innerHTML = template(data)
+                    })
+                    .catch(error => console.error("ERROR:", error))
+
+                document.getElementById("user-info").innerText = `Welcome, ${user.displayName}`;
+                console.log("Authorized user signed in:", user);
+            } catch (error) {
+                console.error("Error signing in:", error);
+            }
+        }
+
+        Handlebars.registerHelper("formatDate", function (dateString, locale = "en-US") {
+            const date = new Date(dateString);
+            return date.toLocaleString(locale, {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+            });
+        });
+
+        Handlebars.registerHelper("formatNumber", function (number) {
+  return Number(number).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+});
+
+
+        // Sign-in function
+        document.getElementById("sign-in-btn").addEventListener("click", signInWithGoogle);
+    </script>
+  
+
+
+</body>
+
+</html>
