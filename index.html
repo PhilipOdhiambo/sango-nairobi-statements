@@ -71,8 +71,7 @@
                 const user = result.user;
                 let res = await fetch(`${url}?route=emails`)
                 let allowedEmails = await res.json()
-                console.log(allowedEmails)
-
+               
                 if (!allowedEmails.includes(user.email)) {
                     alert("Access denied: You are not authorized to sign in.");
                     await auth.signOut(); // Sign out unauthorized user
@@ -94,7 +93,6 @@
                     .catch(error => console.error("ERROR:", error))
 
                 document.getElementById("user-info").innerText = `Welcome, ${user.displayName}`;
-                console.log("Authorized user signed in:", user);
             } catch (error) {
                 console.error("Error signing in:", error);
             }
